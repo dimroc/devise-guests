@@ -4,6 +4,7 @@ module DeviseGuests::Controllers
 
     included do
       include ActiveSupport::Callbacks
+      include ActionController::Cookies if defined?(ActionController::Cookies)
     end
 
     module ClassMethods
@@ -17,14 +18,14 @@ module DeviseGuests::Controllers
         def guest_#{mapping}
           return @guest_#{mapping} if @guest_#{mapping}
 
-          if session[:guest_#{mapping}_id]
-            @guest_#{mapping} = #{class_name}.find_by(#{class_name}.authentication_keys.first => session[:guest_#{mapping}_id]) rescue nil
+          if cookies.permanent[:guest_#{mapping}_id]
+            @guest_#{mapping} = #{class_name}.find_by(#{class_name}.authentication_keys.first => cookies.permanent[:guest_#{mapping}_id]) rescue nil
             @guest_#{mapping} = nil if @guest_#{mapping}.respond_to? :guest and !@guest_#{mapping}.guest
           end
 
           @guest_#{mapping} ||= begin
-            u = create_guest_#{mapping}(session[:guest_#{mapping}_id])
-            session[:guest_#{mapping}_id] = u.send(#{class_name}.authentication_keys.first)
+            u = create_guest_#{mapping}(cookies.permanent[:guest_#{mapping}_id])
+            cookies.permanent[:guest_#{mapping}_id] = u.send(#{class_name}.authentication_keys.first)
             u
           end
 
@@ -33,10 +34,10 @@ module DeviseGuests::Controllers
 
         def current_or_guest_#{mapping}
           if current_#{mapping}
-            if session[:guest_#{mapping}_id]
+            if cookies.permanent[:guest_#{mapping}_id]
               run_callbacks :logging_in_#{mapping} do
                 guest_#{mapping}.destroy unless send(:"skip_destroy_guest_#{mapping}")
-                session[:guest_#{mapping}_id] = nil
+                cookies.permanent[:guest_#{mapping}_id] = nil
               end
             end
             current_#{mapping}

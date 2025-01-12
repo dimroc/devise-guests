@@ -32,7 +32,7 @@ describe ApplicationController, type: :controller do
     guest_user = double
     allow(guest_user).to receive(:destroy)
     allow(@controller).to receive(:guest_user) { guest_user }
-    allow(@controller).to receive(:session) { {guest_user_id: 123} }
+    allow(@controller).to receive(:cookies) { OpenStruct.new({ permanent: { guest_user_id: 123 } }) }
 
     expect(@controller).to receive(:run_callbacks).with(:logging_in_user).and_call_original
     expect(@controller).to receive(:transfer_guest_to_user).and_call_original
